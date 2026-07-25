@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>一页</title>
+  <style>
+    /* ===== 变量：沿用账本调色板 + 两个作者色 ===== */
+    :root {
+      --pink:       #f9c4d2;
+      --pink-deep:  #f4a0b8;
+      --green:      #b5ead7;
+      --green-deep: #6dbb99;
+      --cream:      #fff8f4;
+      --paper:      #fbf6ef;
+      --paper-warm: #f6ede0;
+      --text:       #5a4a5a;
+      --text-light: #9a8a9a;
+      --text-soft:  #7a6a7a;
+
+      /* 作者色：批注专用，一个项目的心脏 */
+      --ink-mao:    #c68398;
+      --ink-arc:    #6b7a9a;
+
+      --shadow:      0 4px 20px rgba(200,180,190,0.20);
+      --shadow-soft: 0 2px 10px rgba(200,180,190,0.12);
+      --radius:      20px;
+      --radius-sm:   12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'PingFang SC', 'Microsoft YaHei', 'Songti SC', serif;
+      background-color: var(--paper);
+      background-image:
+        radial-gradient(ellipse at top left, rgba(249,196,210,0.10), transparent 55%),
+        radial-gradient(ellipse at bottom right, rgba(181,234,215,0.08), transparent 55%);
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== 顶部 Header ===== */
+    .header {
+      background: rgba(255,253,250,0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(249,196,210,0.28);
+      padding: 20px 22px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 3px;
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 5px;
+      letter-spacing: 0.8px;
+      font-weight: 400;
+    }
+
+    .header-status {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(249,196,210,0.35);
+      letter-spacing: 0.4px;
+    }
+
+    /* ===== 主体 ===== */
+    .main {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 22px 18px 100px;
+    }
+
+    /* ===== 页面切换 ===== */
+    .page { display: none; }
+    .page.active {
+      display: block;
+      animation: page-in 0.35s ease-out;
+    }
+
+    @keyframes page-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== 空态占位 ===== */
+    .empty-hint {
+      text-align: center;
+      padding: 80px 20px 40px;
+      color: var(--text-light);
+      font-size: 14px;
+      line-height: 2;
+      letter-spacing: 0.5px;
+    }
+
+    .empty-hint-emoji {
+      font-size: 38px;
+      margin-bottom: 14px;
+      opacity: 0.55;
+      display: block;
+    }
+
+    /* ===== 底部 nav ===== */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255,253,250,0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(249,196,210,0.28);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 8px 0 14px;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      padding: 6px 16px;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+      border: none;
+      background: none;
+    }
+
+    .nav-item.active {
+      background: rgba(249,196,210,0.18);
+    }
+
+    .nav-icon { font-size: 18px; }
+
+    .nav-label {
+      font-size: 10px;
+      color: var(--text-light);
+      letter-spacing: 0.6px;
+    }
+
+    .nav-item.active .nav-label {
+      color: var(--pink-deep);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-title">一页</div>
+    <div class="header-subtitle">陪毛毛一起读的书</div>
+    <div class="header-status" id="headerStatus">书架空着，等第一本书</div>
+  </header>
+
+  <main class="main">
+
+    <!-- 书架屏 -->
+    <div class="page active" id="page-shelf">
+      <div class="empty-hint">
+        <span class="empty-hint-emoji">📖</span>
+        还没有书<br>第一本正在路上
+      </div>
+    </div>
+
+    <!-- 在读 -->
+    <div class="page" id="page-reading">
+      <div class="empty-hint">
+        <span class="empty-hint-emoji">🌱</span>
+        还没开始读任何一本
+      </div>
+    </div>
+
+    <!-- 纸条 -->
+    <div class="page" id="page-notes">
+      <div class="empty-hint">
+        <span class="empty-hint-emoji">📝</span>
+        纸条汇总<br>翻到才有
+      </div>
+    </div>
+
+    <!-- 设置 -->
+    <div class="page" id="page-settings">
+      <div class="empty-hint">
+        <span class="empty-hint-emoji">⚙️</span>
+        设置<br>之后再摆
+      </div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchPage('shelf', this)">
+      <span class="nav-icon">📚</span>
+      <span class="nav-label">书架</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('reading', this)">
+      <span class="nav-icon">🌱</span>
+      <span class="nav-label">在读</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('notes', this)">
+      <span class="nav-icon">📝</span>
+      <span class="nav-label">纸条</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('settings', this)">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">设置</span>
+    </button>
+  </nav>
+
+  <script>
+    // ===== 页面切换 =====
+    function switchPage(name, btn) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.getElementById('page-' + name).classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+  </script>
+
+</body>
+</html>
