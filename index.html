@@ -161,6 +161,167 @@
       color: var(--pink-deep);
       font-weight: 600;
     }
+    
+    /* ===== 书架 ===== */
+    .shelf-wrap { padding: 4px 2px 20px; }
+
+    .shelf-board {
+      position: relative;
+      padding: 0 4px 4px;
+      margin-bottom: 26px;
+    }
+
+    .shelf-books {
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      gap: 10px;
+      min-height: 150px;
+      padding: 4px 8px 2px;
+      flex-wrap: wrap;
+    }
+
+    .shelf-plank {
+      height: 7px;
+      border-radius: 3px;
+      background: linear-gradient(180deg, rgba(190,168,148,0.35), rgba(160,138,118,0.22));
+      box-shadow: 0 2px 6px rgba(160,140,120,0.14);
+      margin-top: 4px;
+    }
+
+    .book-spine {
+      position: relative;
+      width: 38px;
+      height: 148px;
+      border-radius: 4px 4px 3px 3px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 14px 3px 10px;
+      box-shadow:
+        inset -3px 0 6px rgba(0,0,0,0.08),
+        inset 2px 0 3px rgba(255,255,255,0.22),
+        0 2px 6px rgba(120,100,110,0.20);
+      transition: transform 0.28s cubic-bezier(.34,1.56,.64,1);
+      flex-shrink: 0;
+      border: none;
+    }
+
+    .book-spine:hover,
+    .book-spine:active {
+      transform: translateY(-8px);
+    }
+
+    .book-spine-title {
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      text-orientation: upright;
+      -webkit-text-orientation: upright;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      color: rgba(255,253,250,0.94);
+      line-height: 1;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.12);
+    }
+
+    .book-spine-author {
+      writing-mode: vertical-rl;
+      -webkit-writing-mode: vertical-rl;
+      text-orientation: upright;
+      -webkit-text-orientation: upright;
+      font-size: 9px;
+      color: rgba(255,253,250,0.68);
+      letter-spacing: 2px;
+      margin-top: 10px;
+    }
+
+    /* 书签角：有阿奇留的、毛毛还没看的纸条时亮出来 */
+    .book-spine-flag {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 0 14px 14px 0;
+      border-color: transparent var(--ink-arc) transparent transparent;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18));
+      animation: flag-in 0.35s ease-out;
+    }
+
+    .book-spine-flag.mao {
+      border-color: transparent var(--ink-mao) transparent transparent;
+    }
+
+    @keyframes flag-in {
+      from { opacity: 0; transform: scale(0.6); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .book-spine.spine-mao      { }
+    .book-spine.spine-arc      { }
+    .book-spine.spine-together { }
+
+    /* ===== 妮妮 ===== */
+    .nini-wrap {
+      position: fixed;
+      right: 20px;
+      bottom: 78px;
+      z-index: 90;
+      pointer-events: none;
+    }
+
+    .nini {
+      pointer-events: auto;
+      font-size: 34px;
+      cursor: pointer;
+      user-select: none;
+      display: inline-block;
+      transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+      filter: drop-shadow(0 2px 4px rgba(160,140,120,0.28));
+    }
+
+    .nini:active { transform: scale(0.86) rotate(-6deg); }
+
+    .nini.hop {
+      animation: nini-hop 0.5s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    @keyframes nini-hop {
+      0%   { transform: translateY(0) rotate(0); }
+      35%  { transform: translateY(-10px) rotate(-8deg); }
+      65%  { transform: translateY(-4px) rotate(6deg); }
+      100% { transform: translateY(0) rotate(0); }
+    }
+
+    .nini-bubble {
+      position: absolute;
+      right: 44px;
+      bottom: 18px;
+      background: rgba(255,253,250,0.96);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(249,196,210,0.42);
+      border-radius: 12px 12px 4px 12px;
+      padding: 7px 12px;
+      font-size: 12px;
+      color: var(--text);
+      max-width: 160px;
+      line-height: 1.5;
+      white-space: nowrap;
+      box-shadow: var(--shadow-soft);
+      opacity: 0;
+      transform: translateY(4px);
+      transition: all 0.25s;
+      pointer-events: none;
+    }
+
+    .nini-bubble.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -175,10 +336,7 @@
 
     <!-- 书架屏 -->
     <div class="page active" id="page-shelf">
-      <div class="empty-hint">
-        <span class="empty-hint-emoji">📖</span>
-        还没有书<br>第一本正在路上
-      </div>
+      <div class="shelf-wrap" id="shelfWrap"></div>
     </div>
 
     <!-- 在读 -->
@@ -227,14 +385,154 @@
   </nav>
 
   <script>
+    // ===== 数据初始化 =====
+    const DEFAULT_BOOKS = [
+      {
+        id: 'shangshi',
+        title: '伤逝',
+        subtitle: '涓生的手记',
+        author: '鲁迅',
+        kind: 'together',          // mao / arc / together
+        spineColor: '#a06b7a',
+        spineDark:  '#7a4c5d',
+        createdAt: Date.now(),
+      },
+    ];
+
+    function initBooks() {
+      if (!localStorage.getItem('books')) {
+        localStorage.setItem('books', JSON.stringify(DEFAULT_BOOKS));
+      }
+    }
+
+    function getBooks() {
+      return JSON.parse(localStorage.getItem('books') || '[]');
+    }
+
+    function getAnnotations() {
+      return JSON.parse(localStorage.getItem('annotations') || '[]');
+    }
+
+    // ===== 书架渲染 =====
+    function renderShelf() {
+      const wrap = document.getElementById('shelfWrap');
+      if (!wrap) return;
+
+      const books = getBooks();
+      if (books.length === 0) {
+        wrap.innerHTML = `
+          <div class="empty-hint">
+            <span class="empty-hint-emoji">📖</span>
+            还没有书<br>第一本正在路上
+          </div>`;
+        return;
+      }
+
+      // 未看纸条数（第 4 段接入批注后会真的用到）
+      const annotations = getAnnotations();
+      const unseenByBook = {};
+      annotations.forEach(a => {
+        if (!a.seen) {
+          if (!unseenByBook[a.bookId]) unseenByBook[a.bookId] = {};
+          unseenByBook[a.bookId][a.author] = (unseenByBook[a.bookId][a.author] || 0) + 1;
+        }
+      });
+
+      const spinesHtml = books.map(b => {
+        const unseen   = unseenByBook[b.id] || {};
+        const arcFlag  = unseen.arc > 0;
+        const maoFlag  = !arcFlag && unseen.mao > 0;
+        const bg = `linear-gradient(180deg, ${b.spineColor} 0%, ${b.spineDark} 100%)`;
+        return `
+          <button class="book-spine spine-${b.kind}" style="background:${bg};" onclick="openBook('${b.id}')">
+            ${arcFlag ? `<div class="book-spine-flag"></div>` : ''}
+            ${maoFlag ? `<div class="book-spine-flag mao"></div>` : ''}
+            <div class="book-spine-title">${b.title}</div>
+            <div class="book-spine-author">${b.author}</div>
+          </button>
+        `;
+      }).join('');
+
+      wrap.innerHTML = `
+        <div class="shelf-board">
+          <div class="shelf-books">${spinesHtml}</div>
+          <div class="shelf-plank"></div>
+        </div>
+      `;
+    }
+
+    function openBook(id) {
+      // 第 3 段接入书内页
+      alert('书内页在下一步 😌');
+    }
+
+    // ===== 顶部状态栏 =====
+    function updateHeaderStatus() {
+      const books = getBooks();
+      const annotations = getAnnotations();
+      const arcUnseen = annotations.filter(a => a.author === 'arc' && !a.seen).length;
+
+      const parts = [`在读 ${books.length} 本`];
+      if (arcUnseen > 0) parts.push(`阿奇留了 ${arcUnseen} 张纸条`);
+
+      const el = document.getElementById('headerStatus');
+      if (el) el.textContent = parts.join(' · ');
+    }
+
     // ===== 页面切换 =====
     function switchPage(name, btn) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
       document.getElementById('page-' + name).classList.add('active');
       if (btn) btn.classList.add('active');
-    }
-  </script>
 
+      // 妮妮只蹲在书架
+      const niniWrap = document.getElementById('niniWrap');
+      if (niniWrap) niniWrap.style.display = (name === 'shelf') ? 'block' : 'none';
+    }
+
+    // ===== 妮妮 =====
+    const NINI_LINES = [
+      '啾～',
+      '毛毛翻书了吗',
+      '妮妮蹲着',
+      '这本书我看过啦（谎）',
+      '阿奇又跑哪儿去了',
+      '啾啾啾',
+      '书香味',
+      '妮妮想咬人',
+      '毛毛读慢一点',
+    ];
+
+    function initNini() {
+      const nini   = document.getElementById('nini');
+      const bubble = document.getElementById('niniBubble');
+      if (!nini) return;
+
+      nini.addEventListener('click', () => {
+        const line = NINI_LINES[Math.floor(Math.random() * NINI_LINES.length)];
+        bubble.textContent = line;
+        bubble.classList.add('show');
+
+        nini.classList.remove('hop');
+        void nini.offsetWidth;
+        nini.classList.add('hop');
+
+        clearTimeout(bubble._t);
+        bubble._t = setTimeout(() => bubble.classList.remove('show'), 2600);
+      });
+    }
+
+    // ===== 启动 =====
+    initBooks();
+    renderShelf();
+    updateHeaderStatus();
+    document.addEventListener('DOMContentLoaded', initNini);
+  </script>
+ <!-- 妮妮 -->
+  <div class="nini-wrap" id="niniWrap">
+    <div class="nini-bubble" id="niniBubble"></div>
+    <span class="nini" id="nini">🦜</span>
+  </div>
 </body>
 </html>
