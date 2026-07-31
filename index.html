@@ -718,12 +718,17 @@
       },
     ];
 
-    function initBooks() {
-      if (!localStorage.getItem('books')) {
-        localStorage.setItem('books', JSON.stringify(DEFAULT_BOOKS));
+        function initBooks() {
+      const raw = localStorage.getItem('books');
+      let books = raw ? JSON.parse(raw) : [];
+      // 数据升级：如果旧版《伤逝》没有 chapters，用新默认覆盖
+      const old = books.find(b => b.id === 'shangshi');
+      if (!old || !old.chapters || old.chapters.length === 0) {
+        books = books.filter(b => b.id !== 'shangshi');
+        books.unshift(DEFAULT_BOOKS[0]);
+        localStorage.setItem('books', JSON.stringify(books));
       }
     }
-
     function getBooks() {
       return JSON.parse(localStorage.getItem('books') || '[]');
     }
