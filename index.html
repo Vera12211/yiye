@@ -322,6 +322,262 @@
       opacity: 1;
       transform: translateY(0);
     }
+    
+    /* ===== 书内页 ===== */
+    .book-page {
+      background: linear-gradient(180deg, var(--paper) 0%, var(--paper-warm) 100%);
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 200;
+      overflow-y: auto;
+      display: none;
+      flex-direction: column;
+    }
+    .book-page.active {
+      display: flex;
+      animation: page-in 0.35s ease-out;
+    }
+
+    .book-topbar {
+      background: rgba(255,253,250,0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(200,180,190,0.18);
+      padding: 14px 18px calc(14px + env(safe-area-inset-top,0)) 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .book-topbar-btn {
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: var(--text-soft);
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 8px;
+      transition: background 0.15s;
+      line-height: 1;
+    }
+    .book-topbar-btn:hover { background: rgba(249,196,210,0.15); }
+
+    .book-topbar-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 3px;
+    }
+
+    .book-content {
+      max-width: 520px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 34px 26px 28px;
+      flex: 1;
+    }
+
+    .book-chapter-title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 6px;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px dashed rgba(200,180,190,0.30);
+    }
+
+    .book-paragraph {
+      font-size: 16px;
+      line-height: 2.0;
+      color: var(--text);
+      margin-bottom: 18px;
+      text-indent: 2em;
+      letter-spacing: 0.4px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .book-paragraph:hover {
+      background: rgba(249,196,210,0.06);
+    }
+
+    .book-footbar {
+      background: rgba(255,253,250,0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(200,180,190,0.2);
+      padding: 12px 18px calc(12px + env(safe-area-inset-bottom,0));
+      position: sticky;
+      bottom: 0;
+    }
+
+    .book-nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .book-nav-btn {
+      flex: 1;
+      background: rgba(249,196,210,0.14);
+      border: 1px solid rgba(249,196,210,0.32);
+      border-radius: var(--radius-sm);
+      padding: 9px 10px;
+      font-size: 12px;
+      color: var(--text-soft);
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+    .book-nav-btn:hover:not(:disabled) { background: rgba(249,196,210,0.24); }
+    .book-nav-btn:disabled { opacity: 0.32; cursor: default; }
+
+    .book-nav-current {
+      font-size: 12px;
+      color: var(--text-light);
+      padding: 0 12px;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .book-call-arc {
+      width: 100%;
+      background: linear-gradient(135deg, var(--ink-arc), #4d5b7a);
+      color: rgba(255,253,250,0.96);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 11px;
+      font-size: 13px;
+      letter-spacing: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(107,122,154,0.28);
+    }
+    .book-call-arc:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(107,122,154,0.36);
+    }
+
+    /* ===== 目录抽屉 ===== */
+    .toc-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(90,74,90,0.28);
+      z-index: 300;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.25s;
+    }
+    .toc-mask.show { opacity: 1; visibility: visible; }
+
+    .toc-drawer {
+      position: fixed;
+      top: 0;
+      right: -85%;
+      width: 78%;
+      max-width: 340px;
+      height: 100vh;
+      background: var(--paper);
+      z-index: 310;
+      transition: right 0.32s cubic-bezier(.4,0,.2,1);
+      overflow-y: auto;
+      box-shadow: -6px 0 20px rgba(90,74,90,0.18);
+      display: flex;
+      flex-direction: column;
+    }
+    .toc-drawer.show { right: 0; }
+
+    .toc-header {
+      padding: 22px 22px 14px;
+      border-bottom: 1px dashed rgba(200,180,190,0.28);
+    }
+    .toc-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 3px;
+    }
+    .toc-sub {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .toc-list { padding: 8px 0; flex: 1; }
+
+    .toc-item {
+      padding: 12px 22px;
+      font-size: 14px;
+      color: var(--text-soft);
+      cursor: pointer;
+      transition: background 0.15s;
+      border-left: 3px solid transparent;
+      letter-spacing: 1px;
+    }
+    .toc-item:hover { background: rgba(249,196,210,0.08); }
+    .toc-item.current {
+      color: var(--text);
+      font-weight: 600;
+      border-left-color: var(--pink-deep);
+      background: rgba(249,196,210,0.10);
+    }
+    .toc-item-num {
+      color: var(--text-light);
+      font-size: 12px;
+      margin-right: 12px;
+      letter-spacing: 0;
+    }
+
+    /* ===== 在读卡片 ===== */
+    .reading-card {
+      background: rgba(255,253,250,0.75);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(200,180,190,0.22);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: var(--shadow-soft);
+    }
+    .reading-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow);
+    }
+    .reading-card-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 4px;
+      margin-bottom: 4px;
+    }
+    .reading-card-author {
+      font-size: 12px;
+      color: var(--text-light);
+      letter-spacing: 1px;
+    }
+    .reading-card-progress {
+      font-size: 13px;
+      color: var(--text-soft);
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px dashed rgba(200,180,190,0.24);
+      letter-spacing: 0.5px;
+    }
+    .reading-card-cta {
+      font-size: 12px;
+      color: var(--pink-deep);
+      margin-top: 10px;
+      letter-spacing: 1px;
+    }
   </style>
 </head>
 <body>
