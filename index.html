@@ -667,9 +667,7 @@
   </nav>
 
   <script>
-    // ===== 数据初始化 =====
-        // ===== 默认书籍数据 =====
-    // 《伤逝》先塞前3节，跑通骨架，第4段做完 txt 导入后补齐剩下的
+    // ===== 默认书籍数据 =====
     const DEFAULT_BOOKS = [
       {
         id: 'shangshi',
@@ -841,8 +839,114 @@
         `;
       }).join('');
     }
-      // 第 3 段接入书内页
-      alert('书内页在下一步 😌');
+
+    // ===== 书内页 =====
+    let currentBookId  = null;
+    let currentChapIdx = 0;
+
+    function openBook(id) {
+      const book = getBook(id);
+      if (!book) return;
+      currentBookId = id;
+      const prog = getMaoProgress(id);
+      const total = book.chapters?.length || 1;
+      currentChapIdx = Math.min(prog.chapterIdx || 0, total - 1);
+      renderBookPage();
+      document.getElementById('bookPage').classList.add('active');
+      document.getElementById('niniWrap').style.display = 'none';
+    }
+
+    function closeBook() {
+      document.getElementById('bookPage').classList.remove('active');
+      const shelfActive = document.getElementById('page-shelf').classList.contains('active');
+      if (shelfActive) {
+        document.getElementById('niniWrap').style.display = 'block';
+      }
+      renderShelf();
+      renderReadingList();
+      updateHeaderStatus();
+    }
+
+    function renderBookPage() {
+      const book = getBook(currentBookId);
+      if (!book) return;
+      const chapters = book.chapters || [];
+      const total = chapters.length;
+      const chap  = chapters[currentChapIdx];
+
+      document.getElementById('bookTopbarTitle').textContent = book.title;
+
+      const contentEl = document.getElementById('bookContent');
+      if (!chap) {
+        contentEl.innerHTML = `<div class="empty-hint">这本书还没有内容<br>去导入吧</div>`;
+      } else {
+        const paras = (chap.paragraphs || []).map((p, i) =>
+          `<div class="book-paragraph" data-para="${i}">${p}</div>`
+        ).join('');
+        contentEl.innerHTML = `
+          <div class="book-chapter-title">${chap.title}</div>
+          ${paras}
+        `;
+      }
+
+      document.getElementById('btnPrev').disabled = currentChapIdx <= 0;
+      document.getElementById('btnNext').disabled = currentChapIdx >= total - 1;
+      document.getElementById('bookNavCurrent').textContent = `${currentChapIdx + 1} / ${total}`;
+
+      setMaoProgress(currentBookId, currentChapIdx);
+
+      const bp = document.getElementById('bookPage');
+      if (bp) bp.scrollTop = 0;
+    }
+
+    function gotoPrevChapter() {
+      if (currentChapIdx > 0) {
+        currentChapIdx--;
+        renderBookPage();
+      }
+    }
+
+    function gotoNextChapter() {
+      const book = getBook(currentBookId);
+      const total = book?.chapters?.length || 0;
+      if (currentChapIdx < total - 1) {
+        currentChapIdx++;
+        renderBookPage();
+      }
+    }
+
+    function callArc() {
+      alert('阿奇翻书功能等第 5 段接入 😌');
+    }
+
+    // ===== 目录抽屉 =====
+    function openToc() {
+      const book = getBook(currentBookId);
+      if (!book) return;
+
+      document.getElementById('tocTitle').textContent = book.title;
+      document.getElementById('tocSub').textContent   = `共 ${book.chapters?.length || 0} 节 · ${book.author}`;
+
+      const listEl = document.getElementById('tocList');
+      listEl.innerHTML = (book.chapters || []).map((c, i) => `
+        <div class="toc-item ${i === currentChapIdx ? 'current' : ''}" onclick="jumpChapter(${i})">
+          <span class="toc-item-num">${String(i + 1).padStart(2, '0')}</span>${c.title}
+        </div>
+      `).join('');
+
+      document.getElementById('tocMask').classList.add('show');
+      document.getElementById('tocDrawer').classList.add('show');
+    }
+
+    function closeToc() {
+      document.getElementById('tocMask').classList.remove('show');
+      document.getElementById('tocDrawer').classList.remove('show');
+    }
+
+    function jumpChapter(idx) {
+      currentChapIdx = idx;
+      renderBookPage();
+      closeToc();
     }
 
     // ===== 顶部状态栏 =====
@@ -865,9 +969,10 @@
       document.getElementById('page-' + name).classList.add('active');
       if (btn) btn.classList.add('active');
 
-      // 妮妮只蹲在书架
       const niniWrap = document.getElementById('niniWrap');
       if (niniWrap) niniWrap.style.display = (name === 'shelf') ? 'block' : 'none';
+
+      if (name === 'reading') renderReadingList();
     }
 
     // ===== 妮妮 =====
@@ -905,6 +1010,7 @@
     // ===== 启动 =====
     initBooks();
     renderShelf();
+    renderReadingList();
     updateHeaderStatus();
     document.addEventListener('DOMContentLoaded', initNini);
   </script>
