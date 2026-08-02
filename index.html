@@ -1028,6 +1028,9 @@
 
     <!-- 书架屏 -->
     <div class="page active" id="page-shelf">
+       <div class="shelf-toolbar">
+        <button class="add-book-btn" onclick="openImportModal()">+ 加 书</button>
+      </div>
       <div class="shelf-wrap" id="shelfWrap"></div>
     </div>
 
@@ -1059,6 +1062,7 @@
       <button class="book-topbar-btn" onclick="closeBook()" aria-label="返回">‹</button>
       <div class="book-topbar-title" id="bookTopbarTitle"></div>
       <button class="book-topbar-btn" onclick="openReaderPanel()" aria-label="阅读设置" style="font-size:15px;letter-spacing:-1px;">Aa</button>
+      <button class="book-topbar-btn" onclick="openBookMenu(event)" aria-label="更多">⋯</button>
       <button class="book-topbar-btn" onclick="openToc()" aria-label="目录">☰</button>
     </div>
 
@@ -1083,7 +1087,52 @@
     </div>
     <div class="toc-list" id="tocList"></div>
   </aside>
-  
+    <!-- 导入 txt 弹窗 -->
+  <input type="file" id="importFileInput" accept=".txt" style="display:none;" />
+  <div class="import-mask" id="importMask" onclick="closeImportModal()"></div>
+  <div class="import-modal" id="importModal">
+    <div class="import-title">加 一 本 书</div>
+
+    <div class="import-field">
+      <div class="import-field-label">文 件</div>
+      <div class="import-file-picker" onclick="document.getElementById('importFileInput').click()">
+        <span class="import-file-icon">📄</span>
+        <span class="import-file-name" id="importFileName">点这里选 txt 文件</span>
+      </div>
+    </div>
+
+    <div class="import-field">
+      <div class="import-field-label">书 名</div>
+      <input type="text" class="import-input" id="importTitle" placeholder="书名" maxlength="20" />
+    </div>
+
+    <div class="import-field">
+      <div class="import-field-label">作 者</div>
+      <input type="text" class="import-input" id="importAuthor" placeholder="作者" maxlength="15" />
+    </div>
+
+    <div class="import-field">
+      <div class="import-field-label">书 脊 颜 色</div>
+      <div class="import-color-picker" id="importColorPicker"></div>
+    </div>
+
+    <div class="import-preview" id="importPreview">
+      <div class="import-preview-count" id="importPreviewCount"></div>
+      <div class="import-preview-firstchap" id="importPreviewFirstChap"></div>
+      <div class="import-preview-firstline" id="importPreviewFirstLine"></div>
+    </div>
+
+    <div class="import-actions">
+      <button class="import-btn import-btn-cancel" onclick="closeImportModal()">取消</button>
+      <button class="import-btn import-btn-submit" id="importSubmitBtn" onclick="submitImport()" disabled>加进书架</button>
+    </div>
+  </div>
+
+  <!-- 书内页更多菜单 -->
+  <div class="book-menu-mask" id="bookMenuMask" onclick="closeBookMenu()"></div>
+  <div class="book-menu" id="bookMenu">
+    <div class="book-menu-item danger" onclick="deleteCurrentBook()">删除这本书</div>
+  </div>
   <!-- 阅读设置面板 -->
   <div class="reader-mask" id="readerMask" onclick="closeReaderPanel()"></div>
   <div class="reader-panel" id="readerPanel">
