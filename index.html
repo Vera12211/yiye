@@ -1567,13 +1567,19 @@
 
          <div class="settings-card">
         <div class="settings-card-title">A P I</div>
-        <div class="settings-label-main">中转站 Key</div>
-        <div class="settings-label-sub">阿奇翻书用。只存在你手机里，不会上传</div>
-        <input type="password" id="apiKeyInput" class="settings-input" placeholder="填你的 xiaoma.best key" />
+
+        <div class="settings-label-main">API 地址</div>
+        <div class="settings-label-sub">填到 /v1 那一层就行，比如 https://xxx.com/v1</div>
+        <input type="text" id="apiBaseInput" class="settings-input" placeholder="https://xxx.com/v1" />
+        <button class="settings-btn line" onclick="saveApiBase()">保存地址</button>
+
+        <div class="settings-label-main" style="margin-top:22px;">API Key</div>
+        <div class="settings-label-sub">只存在你手机里，不会上传</div>
+        <input type="password" id="apiKeyInput" class="settings-input" placeholder="填 key" />
         <button class="settings-btn" onclick="saveApiKey()">保存 Key</button>
 
         <div class="settings-label-main" style="margin-top:22px;">模型 ID</div>
-        <div class="settings-label-sub">中转站上 Opus 4.7 对应的模型名，直接填</div>
+        <div class="settings-label-sub">中转站上的模型名，比如 claude-opus-4-5</div>
         <input type="text" id="modelIdInput" class="settings-input" placeholder="claude-opus-4-5" />
         <button class="settings-btn line" onclick="saveModelId()">保存模型</button>
       </div>
@@ -2820,6 +2826,20 @@
         // ===== 翻书主逻辑 =====
 
     // 模型 ID
+       // API 地址
+    function getApiBase() {
+      return localStorage.getItem('yiyeApiBase') || 'https://xiaoma.best/v1';
+    }
+    function saveApiBase() {
+      let val = document.getElementById('apiBaseInput').value.trim();
+      if (!val) { showToast('地址不能空'); return; }
+      // 去掉末尾斜杠和 /chat/completions
+      val = val.replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+      localStorage.setItem('yiyeApiBase', val);
+      showToast('地址已保存');
+    }
+
+    // 模型 ID
     function getModelId() {
       return localStorage.getItem('yiyeModelId') || 'claude-opus-4-5';
     }
@@ -3003,7 +3023,7 @@ ${chapterText}
 现在你读。读完在你想停下的段落留纸条，同时更新你的读书笔记。直接输出 JSON。`;
 
       const modelId = getModelId();
-      const res = await fetch('https://xiaoma.best/v1/chat/completions', {
+      const res = await fetch(getApiBase() + '/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3201,6 +3221,8 @@ ${chapterText}
       }
       const modelInput = document.getElementById('modelIdInput');
       if (modelInput) modelInput.value = getModelId();
+      const baseInput = document.getElementById('apiBaseInput');
+      if (baseInput) baseInput.value = getApiBase();
     }
     initSettingsUI();
 
