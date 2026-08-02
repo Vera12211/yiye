@@ -1104,6 +1104,7 @@
       renderBookPage();
       document.getElementById('bookPage').classList.add('active');
       document.getElementById('niniWrap').style.display = 'none';
+      applyReaderPrefs();
     }
 
     function closeBook() {
@@ -1197,6 +1198,55 @@
       currentChapIdx = idx;
       renderBookPage();
       closeToc();
+    }
+    
+    // ===== 阅读偏好 =====
+    function getReaderPrefs() {
+      return JSON.parse(localStorage.getItem('readerPrefs') || '{"fontSize":3,"theme":"paper"}');
+    }
+
+    function saveReaderPrefs(prefs) {
+      localStorage.setItem('readerPrefs', JSON.stringify(prefs));
+    }
+
+    function applyReaderPrefs() {
+      const prefs = getReaderPrefs();
+      const bp = document.getElementById('bookPage');
+      if (!bp) return;
+      bp.setAttribute('data-fontsize', prefs.fontSize);
+      bp.setAttribute('data-theme',    prefs.theme);
+
+      document.querySelectorAll('.reader-font-btn').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.dataset.size) === Number(prefs.fontSize));
+      });
+      document.querySelectorAll('.reader-theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === prefs.theme);
+      });
+    }
+
+    function openReaderPanel() {
+      applyReaderPrefs();
+      document.getElementById('readerMask').classList.add('show');
+      document.getElementById('readerPanel').classList.add('show');
+    }
+
+    function closeReaderPanel() {
+      document.getElementById('readerMask').classList.remove('show');
+      document.getElementById('readerPanel').classList.remove('show');
+    }
+
+    function setReaderFont(size) {
+      const prefs = getReaderPrefs();
+      prefs.fontSize = size;
+      saveReaderPrefs(prefs);
+      applyReaderPrefs();
+    }
+
+    function setReaderTheme(theme) {
+      const prefs = getReaderPrefs();
+      prefs.theme = theme;
+      saveReaderPrefs(prefs);
+      applyReaderPrefs();
     }
 
     // ===== 顶部状态栏 =====
