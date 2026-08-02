@@ -1526,6 +1526,218 @@
       saveReaderPrefs(prefs);
       applyReaderPrefs();
     }
+    
+    // ===== 书脊配色·马卡龙 =====
+    const SPINE_COLORS = [
+      { name: '樱花', color: '#f4b8c8', dark: '#d99aab' },
+      { name: '薄荷', color: '#b8dcc4', dark: '#8fbfa0' },
+      { name: '天青', color: '#b8d0e0', dark: '#8fb0c8' },
+      { name: '香芋', color: '#d0bce0', dark: '#ac97c4' },
+      { name: '奶橙', color: '#f4c8a0', dark: '#d9a678' },
+      { name: '柠黄', color: '#eddba0', dark: '#ccb572' },
+      { name: '玫瑰', color: '#e8a0b0', dark: '#c88090' },
+      { name: '灰蓝', color: '#b8c0d0', dark: '#929cb0' },
+    ];
+
+    // ===== 导入弹窗 =====
+    let importFileText = '';
+    let importChapters = [];
+    let importColorIdx = 0;
+
+    function openImportModal() {
+      importFileText = '';
+      importChapters = [];
+      importColorIdx = 0;
+      document.getElementById('importFileName').textContent = '点这里选 txt 文件';
+      document.getElementById('importTitle').value = '';
+      document.getElementById('importAuthor').value = '';
+      document.getElementById('importPreview').style.display = 'none';
+      document.getElementById('importSubmitBtn').disabled = true;
+      renderImportColorPicker();
+      document.getElementById('importMask').classList.add('show');
+      document.getElementById('importModal').classList.add('show');
+    }
+
+    function closeImportModal() {
+      document.getElementById('importMask').classList.remove('show');
+      document.getElementById('importModal').classList.remove('show');
+    }
+
+    function renderImportColorPicker() {
+      const wrap = document.getElementById('importColorPicker');
+      wrap.innerHTML = SPINE_COLORS.map((c, i) => {
+        const bg = `linear-gradient(180deg, ${c.color} 0%, ${c.dark} 100%)`;
+        return `<button class="import-color-btn ${i === importColorIdx ? 'active' : ''}" style="background:${bg};" onclick="selectSpineColor(${i})" title="${c.name}"></button>`;
+      }).join('');
+    }
+
+    function selectSpineColor(idx) {
+      importColorIdx = idx;
+      renderImportColorPicker();
+    }
+
+    // ===== txt 文件读取·自动编码 =====
+    async function readTxtFile(file) {
+      const buf = await file.arrayBuffer();
+      let text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
+      const badCount = (text.match(/\uFFFD/g) || []).length;
+      if (badCount > 10 || badCount / (text.length || 1) > 0.01) {
+        try {
+          text = new TextDecoder('gbk').decode(buf);
+        } catch (e) {
+          try { text = new TextDecoder('gb18030').decode(buf); } catch {}
+        }
+      }
+      return text;
+    }
+
+    // ===== 章节切分 =====
+    const CHAPTER_REGEX = /^\s*(?:第[零一二三四五六七八九十百千万两\d]+[章节回卷篇集部].*|Chapter\s*\d+.*|楔\s*子.*|序\s*[章言曲].*|前\s*言.*|尾\s*声.*|后\s*记.*|终\s*章.*|番\s*外.*)$/;
+
+    function cleanParagraphs(lines) {
+      return lines
+        .map(l => l.replace(/^\s+|\s+$/g, ''))
+        .filter(l => l.length > 0);
+    }
+
+    function splitChapters(text) {
+      text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const lines = text.split('\n');
+
+      const marks = [];
+      for (let i = 0; i < lines.length; i++) {
+        const ln = lines[i].trim();
+        if (ln.length > 0 && ln.length < 40 && CHAPTER_REGEX.test(ln)) {
+          marks.push({ idx: i, title: ln });
+        }
+      }
+
+      if (marks.length >= 2) {
+        const chapters = [];
+        for (let i = 0; i < marks.length; i++) {
+          const start = marks[i].idx + 1;
+          const end   = (i + 1 < marks.length) ? marks[i + 1].idx : lines.length;
+          const body  = lines.slice(start, end);
+          chapters.push({
+            id: 'c' + (i + 1),
+            title: marks[i].title,
+            paragraphs: cleanParagraphs(body),
+          });
+        }
+        if (marks[0].idx > 0) {
+          const preface = cleanParagraphs(lines.slice(0, marks[0].idx));
+          if (preface.length > 0) {
+            chapters.unshift({ id: 'c0', title: '卷首', paragraphs: preface });
+          }
+        }
+        return chapters;
+      }
+
+      // 没识别到章节，按每 15 段切一节
+      const allParas = cleanParagraphs(lines);
+      const perChap  = 15;
+      const chapters = [];
+      for (let i = 0; i < allParas.length; i += perChap) {
+        chapters.push({
+          id: 'c' + (chapters.length + 1),
+          title: `第 ${chapters.length + 1} 节`,
+          paragraphs: allParas.slice(i, i + perChap),
+        });
+      }
+      return chapters.length > 0 ? chapters : [{ id: 'c1', title: '一', paragraphs: allParas }];
+    }
+
+    // 文件选中事件
+    document.getElementById('importFileInput').addEventListener('change', async (ev) => {
+      const file = ev.target.files[0];
+      if (!file) return;
+      document.getElementById('importFileName').textContent = file.name;
+
+      try {
+        importFileText = await readTxtFile(file);
+        importChapters = splitChapters(importFileText);
+
+        const guess = file.name.replace(/\.txt$/i, '').trim();
+        if (!document.getElementById('importTitle').value) {
+          document.getElementById('importTitle').value = guess.slice(0, 20);
+        }
+
+        const first = importChapters[0];
+        document.getElementById('importPreviewCount').textContent = `识别到 ${importChapters.length} 节`;
+        document.getElementById('importPreviewFirstChap').textContent = `第一节：${first.title}`;
+        const firstText = (first.paragraphs[0] || '').slice(0, 60);
+        document.getElementById('importPreviewFirstLine').textContent = firstText ? `"${firstText}…"` : '';
+        document.getElementById('importPreview').style.display = 'block';
+        document.getElementById('importSubmitBtn').disabled = false;
+      } catch (e) {
+        alert('文件读取失败：' + e.message);
+      } finally {
+        ev.target.value = '';
+      }
+    });
+
+    function submitImport() {
+      const title  = document.getElementById('importTitle').value.trim();
+      const author = document.getElementById('importAuthor').value.trim() || '佚名';
+      if (!title) { alert('书名不能空哦'); return; }
+      if (importChapters.length === 0) { alert('还没选文件'); return; }
+
+      const color = SPINE_COLORS[importColorIdx];
+      const book = {
+        id: 'b' + Date.now(),
+        title,
+        author,
+        kind: 'together',
+        spineColor: color.color,
+        spineDark:  color.dark,
+        createdAt: Date.now(),
+        chapters: importChapters,
+      };
+
+      const books = getBooks();
+      books.push(book);
+      saveBooks(books);
+
+      closeImportModal();
+      renderShelf();
+      renderReadingList();
+      updateHeaderStatus();
+    }
+
+    // ===== 书内页·更多菜单 =====
+    function openBookMenu(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('bookMenuMask').classList.add('show');
+      document.getElementById('bookMenu').classList.add('show');
+    }
+
+    function closeBookMenu() {
+      document.getElementById('bookMenuMask').classList.remove('show');
+      document.getElementById('bookMenu').classList.remove('show');
+    }
+
+    function deleteCurrentBook() {
+      if (!currentBookId) return;
+      const book = getBook(currentBookId);
+      if (!book) return;
+      if (!confirm(`确定删除《${book.title}》吗？删了就没了`)) return;
+
+      let books = getBooks();
+      books = books.filter(b => b.id !== currentBookId);
+      saveBooks(books);
+
+      const p = getProgress();
+      if (p.mao && p.mao[currentBookId]) delete p.mao[currentBookId];
+      if (p.arc && p.arc[currentBookId]) delete p.arc[currentBookId];
+      saveProgress(p);
+
+      let ann = getAnnotations();
+      ann = ann.filter(a => a.bookId !== currentBookId);
+      localStorage.setItem('annotations', JSON.stringify(ann));
+
+      closeBookMenu();
+      closeBook();
+    }
 
     // ===== 顶部状态栏 =====
     function updateHeaderStatus() {
