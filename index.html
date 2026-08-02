@@ -829,6 +829,7 @@
     <div class="book-topbar">
       <button class="book-topbar-btn" onclick="closeBook()" aria-label="返回">‹</button>
       <div class="book-topbar-title" id="bookTopbarTitle"></div>
+      <button class="book-topbar-btn" onclick="openReaderPanel()" aria-label="阅读设置" style="font-size:15px;letter-spacing:-1px;">Aa</button>
       <button class="book-topbar-btn" onclick="openToc()" aria-label="目录">☰</button>
     </div>
 
@@ -853,6 +854,43 @@
     </div>
     <div class="toc-list" id="tocList"></div>
   </aside>
+  
+  <!-- 阅读设置面板 -->
+  <div class="reader-mask" id="readerMask" onclick="closeReaderPanel()"></div>
+  <div class="reader-panel" id="readerPanel">
+    <div class="reader-row">
+      <div class="reader-row-title">字 号</div>
+      <div class="reader-font-btns" id="readerFontBtns">
+        <button class="reader-font-btn" data-size="1" onclick="setReaderFont(1)"><span class="fb-a" style="font-size:12px;">A</span><span class="fb-label">小</span></button>
+        <button class="reader-font-btn" data-size="2" onclick="setReaderFont(2)"><span class="fb-a" style="font-size:14px;">A</span><span class="fb-label">中小</span></button>
+        <button class="reader-font-btn" data-size="3" onclick="setReaderFont(3)"><span class="fb-a" style="font-size:16px;">A</span><span class="fb-label">中</span></button>
+        <button class="reader-font-btn" data-size="4" onclick="setReaderFont(4)"><span class="fb-a" style="font-size:18px;">A</span><span class="fb-label">中大</span></button>
+        <button class="reader-font-btn" data-size="5" onclick="setReaderFont(5)"><span class="fb-a" style="font-size:20px;">A</span><span class="fb-label">大</span></button>
+      </div>
+    </div>
+
+    <div class="reader-row">
+      <div class="reader-row-title">主 题</div>
+      <div class="reader-theme-btns" id="readerThemeBtns">
+        <button class="reader-theme-btn" data-theme="paper"   onclick="setReaderTheme('paper')">
+          <div class="reader-theme-swatch">纸</div>
+          <div class="reader-theme-label">默认</div>
+        </button>
+        <button class="reader-theme-btn" data-theme="eyecare" onclick="setReaderTheme('eyecare')">
+          <div class="reader-theme-swatch">绿</div>
+          <div class="reader-theme-label">护眼</div>
+        </button>
+        <button class="reader-theme-btn" data-theme="brown"   onclick="setReaderTheme('brown')">
+          <div class="reader-theme-swatch">棕</div>
+          <div class="reader-theme-label">牛皮纸</div>
+        </button>
+        <button class="reader-theme-btn" data-theme="night"   onclick="setReaderTheme('night')">
+          <div class="reader-theme-swatch">夜</div>
+          <div class="reader-theme-label">夜间</div>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <nav class="bottom-nav">
     <button class="nav-item active" onclick="switchPage('shelf', this)">
