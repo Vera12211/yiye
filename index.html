@@ -1381,7 +1381,19 @@
       <button class="import-btn import-btn-submit" id="importSubmitBtn" onclick="submitImport()" disabled>加进书架</button>
     </div>
   </div>
-
+ <!-- 写纸条编辑器 -->
+  <div class="note-editor-mask" id="noteEditorMask" onclick="closeNoteEditor()"></div>
+  <div class="note-editor" id="noteEditor">
+    <div class="note-editor-quote" id="noteEditorQuote"></div>
+    <textarea class="note-editor-textarea" id="noteEditorInput" placeholder="想跟阿奇说什么…" maxlength="500"></textarea>
+    <div class="note-editor-footer">
+      <div class="note-editor-count" id="noteEditorCount">0 / 500</div>
+      <div class="note-editor-actions">
+        <button class="note-editor-btn cancel" onclick="closeNoteEditor()">取消</button>
+        <button class="note-editor-btn submit" onclick="submitNote()">留下</button>
+      </div>
+    </div>
+  </div>
   <!-- 书内页更多菜单 -->
   <div class="book-menu-mask" id="bookMenuMask" onclick="closeBookMenu()"></div>
   <div class="book-menu" id="bookMenu">
