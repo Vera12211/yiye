@@ -1014,6 +1014,260 @@
     .book-menu-item:hover { background: rgba(249,196,210,0.14); }
     .book-menu-item.danger { color: #d47c8e; }
     .book-menu-item.danger:hover { background: rgba(212,124,142,0.10); }
+    
+    /* ===== 段落·纸条痕迹 ===== */
+    .book-paragraph {
+      position: relative;
+    }
+
+    /* 长按/hover 时冒出的笔按钮 */
+    .para-pen {
+      position: absolute;
+      right: -6px;
+      bottom: -4px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(255,253,250,0.95);
+      border: 1px solid rgba(200,180,190,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: all 0.22s cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none;
+      z-index: 3;
+      box-shadow: 0 2px 8px rgba(90,74,90,0.15);
+    }
+    .book-paragraph:hover .para-pen,
+    .book-paragraph.pen-show .para-pen {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    /* 段落有阿奇批注 */
+    .book-paragraph.has-arc {
+      border-left: 2px solid var(--ink-arc);
+      padding-left: 12px;
+      margin-left: -14px;
+    }
+    /* 段落有毛毛批注 */
+    .book-paragraph.has-mao {
+      border-left: 2px solid var(--ink-mao);
+      padding-left: 12px;
+      margin-left: -14px;
+    }
+    /* 两个都有 */
+    .book-paragraph.has-both {
+      border-left: 2px solid var(--ink-arc);
+      box-shadow: -4px 0 0 -2px var(--ink-mao);
+      padding-left: 12px;
+      margin-left: -14px;
+    }
+
+    /* 段落尾巴的书签角 */
+    .para-tag {
+      display: inline-block;
+      width: 10px;
+      height: 12px;
+      margin-left: 6px;
+      vertical-align: middle;
+      cursor: pointer;
+      position: relative;
+      top: -1px;
+      transition: transform 0.2s;
+    }
+    .para-tag:hover { transform: translateY(-2px); }
+    .para-tag.arc {
+      background: var(--ink-arc);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);
+    }
+    .para-tag.mao {
+      background: var(--ink-mao);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);
+    }
+    .para-tag.seen { opacity: 0.35; }
+
+    /* ===== 纸条·夹在段落下面 ===== */
+    .para-notes {
+      display: none;
+      margin: 6px 0 14px;
+      padding: 0 0 0 4px;
+    }
+    .para-notes.show {
+      display: block;
+      animation: note-in 0.28s ease-out;
+    }
+    @keyframes note-in {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .note-card {
+      position: relative;
+      background: rgba(255,253,250,0.85);
+      backdrop-filter: blur(8px);
+      border-radius: 10px;
+      padding: 10px 14px 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      line-height: 1.75;
+      color: var(--text);
+      text-indent: 0;
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 8px rgba(90,74,90,0.10);
+    }
+    .note-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      border-radius: 2px;
+    }
+    .note-card.arc::before { background: var(--ink-arc); }
+    .note-card.mao::before { background: var(--ink-mao); }
+
+    .note-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .note-author {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+    .note-author.arc { color: var(--ink-arc); }
+    .note-author.mao { color: var(--ink-mao); }
+    .note-time {
+      font-size: 10px;
+      color: var(--text-light);
+      letter-spacing: 0.5px;
+    }
+
+    .note-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      justify-content: flex-end;
+    }
+    .note-action-btn {
+      background: none;
+      border: none;
+      font-size: 11px;
+      color: var(--text-light);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.15s;
+      letter-spacing: 0.5px;
+    }
+    .note-action-btn:hover { background: rgba(249,196,210,0.14); color: var(--text-soft); }
+    .note-action-btn.danger:hover { color: #d47c8e; background: rgba(212,124,142,0.10); }
+
+    /* 主题·纸条自适应 */
+    .book-page[data-theme="eyecare"] .note-card { background: rgba(255,253,246,0.85); }
+    .book-page[data-theme="brown"]   .note-card { background: rgba(60,50,42,0.72); color: #e8dcc6; }
+    .book-page[data-theme="brown"]   .note-time { color: #a89986; }
+    .book-page[data-theme="night"]   .note-card { background: rgba(35,36,40,0.86); color: #c8c3bc; }
+    .book-page[data-theme="night"]   .note-time { color: #8a857e; }
+
+    /* ===== 写纸条 · 弹窗 ===== */
+    .note-editor-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(90,74,90,0.32);
+      z-index: 400;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.25s;
+    }
+    .note-editor-mask.show { opacity: 1; visibility: visible; }
+
+    .note-editor {
+      position: fixed;
+      left: 50%;
+      bottom: -100%;
+      transform: translateX(-50%);
+      width: calc(100% - 24px);
+      max-width: 420px;
+      background: var(--paper);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px calc(24px + env(safe-area-inset-bottom,0));
+      z-index: 410;
+      transition: bottom 0.32s cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 -8px 24px rgba(90,74,90,0.20);
+    }
+    .note-editor.show { bottom: 0; }
+
+    .note-editor-quote {
+      font-size: 12px;
+      color: var(--text-light);
+      background: rgba(249,196,210,0.08);
+      border-left: 2px solid var(--ink-mao);
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+      line-height: 1.6;
+      max-height: 60px;
+      overflow: hidden;
+      letter-spacing: 0.3px;
+    }
+
+    .note-editor-textarea {
+      width: 100%;
+      min-height: 100px;
+      max-height: 200px;
+      border: 1px solid rgba(200,180,190,0.28);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 14px;
+      color: var(--text);
+      background: rgba(255,253,250,0.6);
+      outline: none;
+      resize: none;
+      font-family: inherit;
+      line-height: 1.7;
+      transition: border-color 0.2s;
+    }
+    .note-editor-textarea:focus { border-color: var(--pink-deep); }
+
+    .note-editor-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .note-editor-count {
+      font-size: 11px;
+      color: var(--text-light);
+      letter-spacing: 0.5px;
+    }
+    .note-editor-actions { display: flex; gap: 10px; }
+    .note-editor-btn {
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      letter-spacing: 2px;
+      font-family: inherit;
+    }
+    .note-editor-btn.cancel {
+      background: rgba(200,180,190,0.14);
+      color: var(--text-soft);
+    }
+    .note-editor-btn.submit {
+      background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+      color: white;
+    }
   </style>
 </head>
 <body>
