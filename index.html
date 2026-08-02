@@ -1268,6 +1268,267 @@
       background: linear-gradient(135deg, var(--pink), var(--pink-deep));
       color: white;
     }
+    
+    /* ===== 翻书面板 ===== */
+    .arc-panel-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(90,74,90,0.32);
+      z-index: 420;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.25s;
+    }
+    .arc-panel-mask.show { opacity: 1; visibility: visible; }
+
+    .arc-panel {
+      position: fixed;
+      left: 50%;
+      bottom: -100%;
+      transform: translateX(-50%);
+      width: calc(100% - 24px);
+      max-width: 420px;
+      background: var(--paper);
+      border-radius: 20px 20px 0 0;
+      padding: 22px 20px calc(24px + env(safe-area-inset-bottom,0));
+      z-index: 430;
+      transition: bottom 0.32s cubic-bezier(.4,0,.2,1);
+      box-shadow: 0 -8px 24px rgba(90,74,90,0.20);
+    }
+    .arc-panel.show { bottom: 0; }
+
+    .arc-panel-title {
+      font-size: 12px;
+      color: var(--text-light);
+      letter-spacing: 4px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .arc-option-btn {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      background: rgba(107,122,154,0.08);
+      border: 1px solid rgba(107,122,154,0.22);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      text-align: left;
+    }
+    .arc-option-btn:hover:not(:disabled) {
+      background: rgba(107,122,154,0.14);
+      transform: translateY(-1px);
+    }
+    .arc-option-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+      transform: none;
+    }
+    .arc-option-title {
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--text);
+    }
+    .arc-option-sub {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 3px;
+      letter-spacing: 0.3px;
+    }
+    .arc-option-arrow {
+      color: var(--ink-arc);
+      font-size: 14px;
+    }
+
+    /* ===== Loading ===== */
+    .arc-loading-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,253,250,0.75);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 500;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+    .arc-loading-mask.show { display: flex; }
+    .arc-loading-dots { display: flex; gap: 8px; }
+    .arc-loading-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ink-arc);
+      animation: dot-pulse 1.2s infinite ease-in-out;
+    }
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50%      { opacity: 1;   transform: scale(1.2); }
+    }
+    .arc-loading-text {
+      font-size: 12px;
+      color: var(--text-soft);
+      letter-spacing: 4px;
+    }
+
+    /* ===== 段落·阿奇按钮（笔旁边） ===== */
+    .para-arc {
+      position: absolute;
+      right: 26px;
+      bottom: -4px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--ink-arc);
+      border: 1px solid rgba(255,253,250,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: white;
+      cursor: pointer;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: all 0.22s cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none;
+      z-index: 3;
+      box-shadow: 0 2px 8px rgba(90,74,90,0.15);
+      letter-spacing: 0;
+      font-weight: 600;
+    }
+    .book-paragraph:hover .para-arc,
+    .book-paragraph.pen-show .para-arc {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+
+    /* ===== 阿奇留话·toast ===== */
+    .arc-toast {
+      position: fixed;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(107,122,154,0.94);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      z-index: 550;
+      opacity: 0;
+      transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+      box-shadow: 0 6px 20px rgba(107,122,154,0.35);
+      pointer-events: none;
+      max-width: calc(100% - 40px);
+      text-align: center;
+    }
+    .arc-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ===== 设置页 ===== */
+    .settings-card {
+      background: rgba(255,253,250,0.75);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(200,180,190,0.22);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .settings-card-title {
+      font-size: 12px;
+      color: var(--text-light);
+      letter-spacing: 4px;
+      margin-bottom: 14px;
+    }
+    .settings-label-main {
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .settings-label-sub {
+      font-size: 11px;
+      color: var(--text-light);
+      letter-spacing: 0.3px;
+      line-height: 1.7;
+    }
+    .settings-input {
+      width: 100%;
+      border: 1px solid rgba(200,180,190,0.28);
+      border-radius: var(--radius-sm);
+      background: rgba(255,253,250,0.6);
+      padding: 10px 12px;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      font-family: inherit;
+      margin-top: 10px;
+    }
+    .settings-input:focus { border-color: var(--pink-deep); }
+
+    .settings-btn {
+      width: 100%;
+      padding: 11px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+      color: white;
+      font-size: 13px;
+      cursor: pointer;
+      letter-spacing: 3px;
+      margin-top: 12px;
+      font-family: inherit;
+      box-shadow: 0 3px 10px rgba(244,160,184,0.35);
+    }
+    .settings-btn.line {
+      background: rgba(249,196,210,0.10);
+      color: var(--text-soft);
+      border: 1px solid rgba(249,196,210,0.32);
+      box-shadow: none;
+    }
+    .settings-btn.danger {
+      background: rgba(212,124,142,0.08);
+      color: #b96079;
+      border: 1px solid rgba(212,124,142,0.28);
+      box-shadow: none;
+    }
+    .settings-radio-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .settings-radio {
+      flex: 1;
+      min-width: 66px;
+      padding: 10px 6px;
+      background: rgba(200,180,190,0.10);
+      border: 1px solid rgba(200,180,190,0.24);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-soft);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+      font-family: inherit;
+    }
+    .settings-radio.active {
+      background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+      color: white;
+      border-color: transparent;
+    }
   </style>
 </head>
 <body>
@@ -1301,12 +1562,49 @@
       </div>
     </div>
 
-    <!-- 设置 -->
+     <!-- 设置 -->
     <div class="page" id="page-settings">
-      <div class="empty-hint">
-        <span class="empty-hint-emoji">⚙️</span>
-        设置<br>之后再摆
+
+      <div class="settings-card">
+        <div class="settings-card-title">A P I  K E Y</div>
+        <div class="settings-label-main">中转站 Key</div>
+        <div class="settings-label-sub">阿奇翻书用。只存在你手机里，不会上传</div>
+        <input type="password" id="apiKeyInput" class="settings-input" placeholder="填你的 xiaoma.best key" />
+        <button class="settings-btn" onclick="saveApiKey()">保存 Key</button>
       </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">阿 奇 · 自 我 放 养</div>
+        <div class="settings-label-main">阿奇自己翻书</div>
+        <div class="settings-label-sub">
+          关闭 —— 只有你叫他他才翻<br>
+          佛系 —— 24 小时一次 · 20% 概率<br>
+          悠着 —— 12 小时一次 · 30% 概率<br>
+          勤快 —— 6 小时一次 · 50% 概率
+        </div>
+        <div class="settings-radio-row" id="wildRadioRow">
+          <div class="settings-radio" data-wild="off">关闭</div>
+          <div class="settings-radio" data-wild="chill">佛系</div>
+          <div class="settings-radio" data-wild="normal">悠着</div>
+          <div class="settings-radio" data-wild="active">勤快</div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">数 据</div>
+        <button class="settings-btn line" onclick="exportAllData()">📤 导出全部数据</button>
+        <input type="file" id="importDataInput" accept=".json" style="display:none;" />
+        <button class="settings-btn line" style="margin-top:10px;" onclick="document.getElementById('importDataInput').click()">📥 导入数据</button>
+        <button class="settings-btn danger" style="margin-top:10px;" onclick="clearAllData()">🗑 清空所有数据</button>
+      </div>
+
+      <div class="settings-card" style="text-align:center;">
+        <div class="settings-label-sub" style="line-height:2;">
+          一 页 · v1<br>
+          陪毛毛一起读的书
+        </div>
+      </div>
+
     </div>
 
   </main>
@@ -1381,6 +1679,52 @@
       <button class="import-btn import-btn-submit" id="importSubmitBtn" onclick="submitImport()" disabled>加进书架</button>
     </div>
   </div>
+   <!-- 阿奇翻书面板 -->
+  <div class="arc-panel-mask" id="arcPanelMask" onclick="closeArcPanel()"></div>
+  <div class="arc-panel" id="arcPanel">
+    <div class="arc-panel-title">叫 阿 奇 翻 书</div>
+    <button class="arc-option-btn" onclick="arcRead('next1')">
+      <div>
+        <div class="arc-option-title">读接下来这一节</div>
+        <div class="arc-option-sub" id="arcOptNext1"></div>
+      </div>
+      <span class="arc-option-arrow">›</span>
+    </button>
+    <button class="arc-option-btn" onclick="arcRead('next2')">
+      <div>
+        <div class="arc-option-title">读接下来两节</div>
+        <div class="arc-option-sub" id="arcOptNext2"></div>
+      </div>
+      <span class="arc-option-arrow">›</span>
+    </button>
+    <button class="arc-option-btn" onclick="arcRead('catchup')" id="arcOptCatchupBtn">
+      <div>
+        <div class="arc-option-title">追到我现在这里</div>
+        <div class="arc-option-sub" id="arcOptCatchup"></div>
+      </div>
+      <span class="arc-option-arrow">›</span>
+    </button>
+    <button class="arc-option-btn" onclick="arcRead('again')">
+      <div>
+        <div class="arc-option-title">这一节再说点别的</div>
+        <div class="arc-option-sub">读同一节，让阿奇换个说法</div>
+      </div>
+      <span class="arc-option-arrow">›</span>
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="arc-loading-mask" id="arcLoadingMask">
+    <div class="arc-loading-dots">
+      <div class="arc-loading-dot" style="animation-delay:0s;"></div>
+      <div class="arc-loading-dot" style="animation-delay:0.2s;"></div>
+      <div class="arc-loading-dot" style="animation-delay:0.4s;"></div>
+    </div>
+    <div class="arc-loading-text" id="arcLoadingText">阿 奇 在 读</div>
+  </div>
+
+  <!-- Toast -->
+  <div class="arc-toast" id="arcToast"></div>
  <!-- 写纸条编辑器 -->
   <div class="note-editor-mask" id="noteEditorMask" onclick="closeNoteEditor()"></div>
   <div class="note-editor" id="noteEditor">
