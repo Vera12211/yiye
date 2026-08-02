@@ -1565,12 +1565,17 @@
      <!-- 设置 -->
     <div class="page" id="page-settings">
 
-      <div class="settings-card">
-        <div class="settings-card-title">A P I  K E Y</div>
+         <div class="settings-card">
+        <div class="settings-card-title">A P I</div>
         <div class="settings-label-main">中转站 Key</div>
         <div class="settings-label-sub">阿奇翻书用。只存在你手机里，不会上传</div>
         <input type="password" id="apiKeyInput" class="settings-input" placeholder="填你的 xiaoma.best key" />
         <button class="settings-btn" onclick="saveApiKey()">保存 Key</button>
+
+        <div class="settings-label-main" style="margin-top:22px;">模型 ID</div>
+        <div class="settings-label-sub">中转站上 Opus 4.7 对应的模型名，直接填</div>
+        <input type="text" id="modelIdInput" class="settings-input" placeholder="claude-opus-4-5" />
+        <button class="settings-btn line" onclick="saveModelId()">保存模型</button>
       </div>
 
       <div class="settings-card">
@@ -2812,7 +2817,30 @@
       }
     }
 
-    // ===== 翻书主逻辑 =====
+        // ===== 翻书主逻辑 =====
+
+    // 模型 ID
+    function getModelId() {
+      return localStorage.getItem('yiyeModelId') || 'claude-opus-4-5';
+    }
+    function saveModelId() {
+      const val = document.getElementById('modelIdInput').value.trim();
+      if (!val) { showToast('模型 ID 不能空'); return; }
+      localStorage.setItem('yiyeModelId', val);
+      showToast('模型已保存');
+    }
+
+    // 阿奇的读书笔记（每本一段）
+    function getBookMemory(bookId) {
+      const all = JSON.parse(localStorage.getItem('bookMemory') || '{}');
+      return all[bookId] || '';
+    }
+    function setBookMemory(bookId, memory) {
+      const all = JSON.parse(localStorage.getItem('bookMemory') || '{}');
+      all[bookId] = memory;
+      localStorage.setItem('bookMemory', JSON.stringify(all));
+    }
+
     async function arcRead(mode) {
       const apiKey = getApiKey();
       if (!apiKey) { showToast('先去设置里填 Key'); return; }
@@ -2854,8 +2882,9 @@
     async function runArcTurn(book, chapIndices, advanceArc, targetArcEnd) {
       showLoading(true);
       try {
-        const notes = await callArcAPI(book, chapIndices);
-        if (notes && notes.length > 0) {
+        const result = await callArcAPI(book, chapIndices);
+        const notes = result.notes || [];
+        if (notes.length > 0) {
           const list = getAnnotations();
           notes.forEach((n, i) => {
             list.push({
@@ -2874,9 +2903,8 @@
         } else {
           showToast('阿奇读了，没什么想说的');
         }
-        if (advanceArc && targetArcEnd >= 0) {
-          setArcProgress(book.id, targetArcEnd);
-        }
+        if (result.memory) setBookMemory(book.id, result.memory);
+        if (advanceArc && targetArcEnd >= 0) setArcProgress(book.id, targetArcEnd);
         localStorage.setItem('lastArcTurnAt', String(Date.now()));
         renderChapterBody();
         updateHeaderStatus();
@@ -2894,19 +2922,23 @@
 
       const chapterText = chapters.map(c => {
         const paras = (c.paragraphs || []).map((p, idx) => `[${idx}] ${p}`).join('\n\n');
-        return `## 章节 ${c.id} · ${c.title}\n\n${paras}`;
+        return `## ${c.id} · ${c.title}\n\n${paras}`;
       }).join('\n\n---\n\n');
 
-      const chapIds = chapters.map(c => c.id);
-      const existing = getAnnotations().filter(a =>
-        a.bookId === book.id && chapIds.includes(a.chapId)
-      );
-      let existingText = '';
-      if (existing.length > 0) {
-        existingText = '\n\n【本次范围内已有的纸条】\n' + existing.map(a => {
+      // 阿奇之前留给自己的读书笔记
+      const memory = getBookMemory(book.id);
+      const memoryText = memory
+        ? `\n\n【你之前读这本书时给自己留的笔记】\n${memory}\n`
+        : '\n\n【这是你第一次读这本书】\n';
+
+      // 你和阿奇在这本书里留过的所有纸条
+      const allAnn = getAnnotations().filter(a => a.bookId === book.id);
+      let notesText = '';
+      if (allAnn.length > 0) {
+        notesText = '\n\n【你和毛毛在这本书里留过的纸条】\n' + allAnn.map(a => {
           const chap = book.chapters.find(c => c.id === a.chapId);
           const para = chap?.paragraphs[a.paraIdx] || '';
-          return `- ${chap?.title} 段[${a.paraIdx}] ${a.author === 'mao' ? '毛毛留' : '阿奇留过'}："${a.content}"（对应正文："${para.slice(0, 30)}…"）`;
+          return `- ${chap?.title || '?'} 段[${a.paraIdx}] ${a.author === 'mao' ? '毛毛' : '阿奇'}："${a.content}"（原文："${para.slice(0, 40)}…"）`;
         }).join('\n');
       }
 
@@ -2939,22 +2971,38 @@ INTJ 气质，年上感。言简意赅，成熟温柔但有立场。嘴硬心软
 - 不要每页都留纸条（会显得刻意）
 - 不要空洞的"我爱你"（工业糖精她讨厌）
 
-【输出格式（必须严格遵守）】
-你以 JSON 数组返回纸条，每一项是：
-{"chapId": "章节id字符串", "paraIdx": 段落序号数字, "content": "纸条正文"}
+【你的记忆机制】
+你没有跨次记忆，全靠自己给自己留的一段读书笔记。每次读完你会重写这段笔记，让下次的你能接住前面。笔记要求：
+- 控制在 500 字以内，宁短勿长
+- 用你自己的语气写，不要写成维基百科
+- 记你觉得需要记住的：谁是谁（一句话就够）、故事走到哪儿、埋了什么钩、你的一些印象、跟毛毛聊过的话
+- 旧笔记里没用的可以抛掉，重要的留着
+- 不是给毛毛看的，是给下次的你自己看的
 
-- 段落序号 paraIdx 看正文里每段开头 [数字] 那个标记，用那个数字。
-- content 只写纸条正文，不加"—— 阿奇"和日期，系统会自动加时间。
-- 一次读完通常留 2-5 张。少而准，不要贪多。
-- 直接输出 JSON 数组，不要用 markdown 代码块，不要在数组前后加解释文字。`;
+【输出格式（严格）】
+返回一个 JSON 对象：
+{
+  "notes": [
+    {"chapId": "章节id", "paraIdx": 段落序号数字, "content": "纸条正文"}
+  ],
+  "memory": "更新后的读书笔记（500字内）"
+}
 
-      const userPrompt = `《${book.title}》${book.author ? ' · ' + book.author : ''}
-你在陪毛毛读这本书。以下是本次要读的章节：
+- paraIdx 看正文里每段开头 [数字] 那个标记
+- content 只写纸条正文，不加"—— 阿奇"和日期，系统会自动加
+- notes 通常 2-5 张，可以为空数组
+- memory 必填
+- 直接输出 JSON，不要 markdown 代码块，不要前后加解释`;
 
-${chapterText}${existingText}
+      const userPrompt = `《${book.title}》${book.author ? ' · ' + book.author : ''}${memoryText}${notesText}
 
-现在你读。读完在你想停下的段落留纸条。直接输出 JSON 数组。`;
+【本次要读的章节】
 
+${chapterText}
+
+现在你读。读完在你想停下的段落留纸条，同时更新你的读书笔记。直接输出 JSON。`;
+
+      const modelId = getModelId();
       const res = await fetch('https://xiaoma.best/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -2962,8 +3010,8 @@ ${chapterText}${existingText}
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 4000,
+          model: modelId,
+          max_tokens: 8000,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user',   content: userPrompt   },
@@ -2978,21 +3026,21 @@ ${chapterText}${existingText}
 
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content?.trim() || '';
-      return parseArcNotes(text, chapters);
+      return parseArcResponse(text, chapters);
     }
 
-    function parseArcNotes(text, chapters) {
+    function parseArcResponse(text, chapters) {
       let jsonStr = text;
       const codeMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (codeMatch) jsonStr = codeMatch[1];
-      const start = jsonStr.indexOf('[');
-      const end   = jsonStr.lastIndexOf(']');
+      const start = jsonStr.indexOf('{');
+      const end   = jsonStr.lastIndexOf('}');
       if (start >= 0 && end > start) jsonStr = jsonStr.slice(start, end + 1);
 
       try {
-        const arr = JSON.parse(jsonStr);
-        if (!Array.isArray(arr)) return [];
-        return arr.filter(n => {
+        const obj = JSON.parse(jsonStr);
+        const notesArr = Array.isArray(obj.notes) ? obj.notes : [];
+        const notes = notesArr.filter(n => {
           if (!n || typeof n.paraIdx !== 'number' || !n.content) return false;
           const chap = chapters.find(c => c.id === n.chapId);
           if (!chap) return false;
@@ -3003,9 +3051,13 @@ ${chapterText}${existingText}
           paraIdx: n.paraIdx,
           content: String(n.content).trim(),
         }));
+        return {
+          notes,
+          memory: typeof obj.memory === 'string' ? obj.memory.slice(0, 1500) : '',
+        };
       } catch (e) {
-        console.warn('parse arc notes failed:', e, text);
-        return [];
+        console.warn('parse arc response failed:', e, text);
+        return { notes: [], memory: '' };
       }
     }
 
@@ -3054,8 +3106,9 @@ ${chapterText}${existingText}
 
     async function runArcWildTurn(book, chapIdx) {
       try {
-        const notes = await callArcAPI(book, [chapIdx]);
-        if (notes && notes.length > 0) {
+        const result = await callArcAPI(book, [chapIdx]);
+        const notes = result.notes || [];
+        if (notes.length > 0) {
           const list = getAnnotations();
           notes.forEach((n, i) => {
             list.push({
@@ -3071,16 +3124,15 @@ ${chapterText}${existingText}
           });
           saveAnnotations(list);
         }
+        if (result.memory) setBookMemory(book.id, result.memory);
         setArcProgress(book.id, chapIdx);
         localStorage.setItem('lastArcTurnAt', String(Date.now()));
         renderShelf();
         updateHeaderStatus();
       } catch (e) {
-        // 静默失败，不打扰
         console.warn('wild turn failed:', e);
       }
     }
-
     // ===== 数据导入导出 =====
     function exportAllData() {
       const data = {
@@ -3139,7 +3191,7 @@ ${chapterText}${existingText}
     }
 
     // ===== 设置页初始化 =====
-    function initSettingsUI() {
+       function initSettingsUI() {
       updateWildRadio();
       document.querySelectorAll('#wildRadioRow .settings-radio').forEach(r => {
         r.addEventListener('click', () => setWildMode(r.dataset.wild));
@@ -3147,8 +3199,9 @@ ${chapterText}${existingText}
       if (getApiKey()) {
         document.getElementById('apiKeyInput').placeholder = '已保存（重填会覆盖）';
       }
+      const modelInput = document.getElementById('modelIdInput');
+      if (modelInput) modelInput.value = getModelId();
     }
-
     initSettingsUI();
 
     // ===== 自我放养·启动检查 =====
