@@ -1671,17 +1671,11 @@
 
       document.getElementById('bookTopbarTitle').textContent = book.title;
 
-      const contentEl = document.getElementById('bookContent');
+       const contentEl = document.getElementById('bookContent');
       if (!chap) {
         contentEl.innerHTML = `<div class="empty-hint">这本书还没有内容<br>去导入吧</div>`;
       } else {
-        const paras = (chap.paragraphs || []).map((p, i) =>
-          `<div class="book-paragraph" data-para="${i}">${p}</div>`
-        ).join('');
-        contentEl.innerHTML = `
-          <div class="book-chapter-title">${chap.title}</div>
-          ${paras}
-        `;
+        renderChapterBody();
       }
 
       document.getElementById('btnPrev').disabled = currentChapIdx <= 0;
@@ -2005,6 +1999,305 @@
       closeBook();
     }
 
+    // ===== 批注·数据层 =====
+    function saveAnnotations(list) {
+      localStorage.setItem('annotations', JSON.stringify(list));
+    }
+
+    function getAnnotationsBy(bookId, chapId) {
+      return getAnnotations().filter(a => a.bookId === bookId && a.chapId === chapId);
+    }
+
+    function addAnnotation(bookId, chapId, paraIdx, author, content) {
+      const list = getAnnotations();
+      list.push({
+        id: 'n' + Date.now() + Math.random().toString(36).slice(2, 6),
+        bookId, chapId, paraIdx, author, content,
+        seen: author === 'mao',   // 毛毛自己写的默认已读
+        createdAt: Date.now(),
+      });
+      saveAnnotations(list);
+    }
+
+    function updateAnnotation(id, content) {
+      const list = getAnnotations();
+      const idx = list.findIndex(a => a.id === id);
+      if (idx >= 0) {
+        list[idx].content = content;
+        list[idx].updatedAt = Date.now();
+        saveAnnotations(list);
+      }
+    }
+
+    function deleteAnnotation(id) {
+      let list = getAnnotations();
+      list = list.filter(a => a.id !== id);
+      saveAnnotations(list);
+    }
+
+    function markSeen(id) {
+      const list = getAnnotations();
+      const idx = list.findIndex(a => a.id === id);
+      if (idx >= 0 && !list[idx].seen) {
+        list[idx].seen = true;
+        saveAnnotations(list);
+      }
+    }
+
+    function formatTime(t) {
+      const d = new Date(t);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      const pad = n => String(n).padStart(2, '0');
+      if (sameDay) return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      return `${d.getMonth()+1}月${d.getDate()}日`;
+    }
+
+    // ===== 段落·长按 + 笔按钮 =====
+    let longPressTimer = null;
+    let longPressTarget = null;
+
+    function attachParagraphEvents() {
+      document.querySelectorAll('.book-paragraph').forEach(p => {
+        // 触摸长按
+        p.addEventListener('touchstart', (e) => {
+          longPressTarget = p;
+          clearTimeout(longPressTimer);
+          longPressTimer = setTimeout(() => {
+            document.querySelectorAll('.book-paragraph.pen-show').forEach(x => x.classList.remove('pen-show'));
+            p.classList.add('pen-show');
+            longPressTarget = null;
+          }, 400);
+        }, { passive: true });
+
+        p.addEventListener('touchmove', () => {
+          clearTimeout(longPressTimer);
+          longPressTarget = null;
+        }, { passive: true });
+
+        p.addEventListener('touchend', () => {
+          clearTimeout(longPressTimer);
+        }, { passive: true });
+
+        // 桌面长按（鼠标按住 400ms）
+        p.addEventListener('mousedown', (e) => {
+          if (e.target.closest('.para-pen') || e.target.closest('.para-tag') || e.target.closest('.para-notes')) return;
+          clearTimeout(longPressTimer);
+          longPressTimer = setTimeout(() => {
+            document.querySelectorAll('.book-paragraph.pen-show').forEach(x => x.classList.remove('pen-show'));
+            p.classList.add('pen-show');
+          }, 400);
+        });
+        p.addEventListener('mouseup',    () => clearTimeout(longPressTimer));
+        p.addEventListener('mouseleave', () => clearTimeout(longPressTimer));
+      });
+
+      // 点空白处收起笔
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.book-paragraph')) {
+          document.querySelectorAll('.book-paragraph.pen-show').forEach(x => x.classList.remove('pen-show'));
+        }
+      });
+    }
+
+    // ===== 段落渲染改造：把 renderBookPage 里的正文重画一下 =====
+    function renderChapterBody() {
+      const book = getBook(currentBookId);
+      if (!book) return;
+      const chap = book.chapters[currentChapIdx];
+      if (!chap) return;
+
+      const contentEl = document.getElementById('bookContent');
+      const annList = getAnnotationsBy(currentBookId, chap.id);
+
+      // 按段落分组
+      const byPara = {};
+      annList.forEach(a => {
+        if (!byPara[a.paraIdx]) byPara[a.paraIdx] = [];
+        byPara[a.paraIdx].push(a);
+      });
+
+      const parasHtml = (chap.paragraphs || []).map((p, i) => {
+        const notes = byPara[i] || [];
+        const hasArc = notes.some(n => n.author === 'arc');
+        const hasMao = notes.some(n => n.author === 'mao');
+        let cls = 'book-paragraph';
+        if (hasArc && hasMao) cls += ' has-both';
+        else if (hasArc)      cls += ' has-arc';
+        else if (hasMao)      cls += ' has-mao';
+
+        // 书签角（每段最多显一个阿奇 + 一个毛毛，颜色代表哪种）
+        let tags = '';
+        if (hasArc) {
+          const unseen = notes.some(n => n.author === 'arc' && !n.seen);
+          tags += `<span class="para-tag arc ${unseen ? '' : 'seen'}" data-para="${i}" data-author="arc"></span>`;
+        }
+        if (hasMao) {
+          tags += `<span class="para-tag mao seen" data-para="${i}" data-author="mao"></span>`;
+        }
+
+        const notesHtml = notes.length ? renderNotesHtml(notes) : '';
+
+        return `
+          <div class="${cls}" data-para="${i}">
+            ${p}${tags}
+            <button class="para-pen" data-para="${i}" title="写纸条">✎</button>
+            <div class="para-notes" id="paraNotes-${i}">${notesHtml}</div>
+          </div>
+        `;
+      }).join('');
+
+      contentEl.innerHTML = `
+        <div class="book-chapter-title">${chap.title}</div>
+        ${parasHtml}
+      `;
+
+      attachParagraphEvents();
+      bindPenAndTagEvents();
+    }
+
+    function renderNotesHtml(notes) {
+      return notes.map(n => `
+        <div class="note-card ${n.author}" data-id="${n.id}">
+          <div class="note-head">
+            <span class="note-author ${n.author}">${n.author === 'arc' ? '阿 奇' : '毛 毛'}</span>
+            <span class="note-time">${formatTime(n.createdAt)}</span>
+          </div>
+          <div class="note-content">${escapeHtml(n.content)}</div>
+          <div class="note-actions">
+            ${n.author === 'mao' ? `<button class="note-action-btn" onclick="editNote('${n.id}')">改</button>` : ''}
+            <button class="note-action-btn danger" onclick="removeNote('${n.id}')">删</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/\n/g, '<br>');
+    }
+
+    function bindPenAndTagEvents() {
+      // 笔按钮
+      document.querySelectorAll('.para-pen').forEach(pen => {
+        pen.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const paraIdx = Number(pen.dataset.para);
+          openNoteEditor(paraIdx, null);
+        });
+      });
+      // 书签角
+      document.querySelectorAll('.para-tag').forEach(tag => {
+        tag.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const paraIdx = Number(tag.dataset.para);
+          toggleParaNotes(paraIdx);
+        });
+      });
+    }
+
+    function toggleParaNotes(paraIdx) {
+      const box = document.getElementById('paraNotes-' + paraIdx);
+      if (!box) return;
+      const willShow = !box.classList.contains('show');
+      box.classList.toggle('show');
+      if (willShow) {
+        // 展开就算已读（阿奇的）
+        const book = getBook(currentBookId);
+        const chap = book.chapters[currentChapIdx];
+        getAnnotationsBy(currentBookId, chap.id)
+          .filter(a => a.paraIdx === paraIdx && a.author === 'arc' && !a.seen)
+          .forEach(a => markSeen(a.id));
+        // 刷新书签角淡化
+        document.querySelectorAll(`.para-tag.arc[data-para="${paraIdx}"]`).forEach(t => t.classList.add('seen'));
+        updateHeaderStatus();
+      }
+    }
+
+    // ===== 纸条编辑器 =====
+    let editingNoteId = null;
+    let editingParaIdx = null;
+
+    function openNoteEditor(paraIdx, noteId) {
+      editingParaIdx = paraIdx;
+      editingNoteId = noteId;
+
+      const book = getBook(currentBookId);
+      const chap = book.chapters[currentChapIdx];
+      const para = chap.paragraphs[paraIdx] || '';
+
+      document.getElementById('noteEditorQuote').textContent = para.slice(0, 80) + (para.length > 80 ? '…' : '');
+
+      let existing = '';
+      if (noteId) {
+        const n = getAnnotations().find(a => a.id === noteId);
+        if (n) existing = n.content;
+      }
+      const ta = document.getElementById('noteEditorInput');
+      ta.value = existing;
+      document.getElementById('noteEditorCount').textContent = `${existing.length} / 500`;
+
+      document.getElementById('noteEditorMask').classList.add('show');
+      document.getElementById('noteEditor').classList.add('show');
+      setTimeout(() => ta.focus(), 300);
+    }
+
+    function closeNoteEditor() {
+      document.getElementById('noteEditorMask').classList.remove('show');
+      document.getElementById('noteEditor').classList.remove('show');
+      editingNoteId = null;
+      editingParaIdx = null;
+    }
+
+    function submitNote() {
+      const content = document.getElementById('noteEditorInput').value.trim();
+      if (!content) { alert('写点什么再留吧'); return; }
+
+      const book = getBook(currentBookId);
+      const chap = book.chapters[currentChapIdx];
+
+      if (editingNoteId) {
+        updateAnnotation(editingNoteId, content);
+      } else {
+        addAnnotation(currentBookId, chap.id, editingParaIdx, 'mao', content);
+      }
+
+      closeNoteEditor();
+      renderChapterBody();
+      // 展开这条纸条对应的段落，让毛毛能看见自己刚留的
+      setTimeout(() => {
+        const box = document.getElementById('paraNotes-' + editingParaIdx);
+        if (box) box.classList.add('show');
+      }, 30);
+      updateHeaderStatus();
+    }
+
+    function editNote(id) {
+      const n = getAnnotations().find(a => a.id === id);
+      if (!n) return;
+      openNoteEditor(n.paraIdx, id);
+    }
+
+    function removeNote(id) {
+      if (!confirm('删掉这条纸条吗？')) return;
+      deleteAnnotation(id);
+      renderChapterBody();
+      updateHeaderStatus();
+    }
+
+    // 字数统计
+    document.addEventListener('DOMContentLoaded', () => {
+      const ta = document.getElementById('noteEditorInput');
+      if (ta) {
+        ta.addEventListener('input', () => {
+          document.getElementById('noteEditorCount').textContent = `${ta.value.length} / 500`;
+        });
+      }
+    });
     // ===== 顶部状态栏 =====
     function updateHeaderStatus() {
       const books = getBooks();
